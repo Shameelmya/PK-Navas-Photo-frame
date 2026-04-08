@@ -138,7 +138,7 @@
         <!-- Poster Display Area -->
         <div class="poster-wrapper bg-white border border-slate-200 relative" id="poster-area">
             <!-- Base Poster Image -->
-            <img id="base-poster" src="ballot%20v2.png" alt="PK Navas Poster Base" class="w-full h-auto block" onerror="this.src='https://placehold.co/1080x1350/eeeeee/999999?text=Please+place+ballot+v2.jpg+in+folder'">
+            <img id="base-poster" src="ballot%20v2.jpg" alt="PK Navas Poster Base" class="w-full h-auto block" onerror="this.src='https://placehold.co/1080x1350/eeeeee/999999?text=Please+place+ballot+v2.jpg+in+folder'">
             
             <!-- Placeholder for User Photo -->
             <div id="photo-placeholder">
@@ -198,8 +198,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Configuration precisely matching the new CSS measurements
             const config = {
-                ratioWidth: 32.4,
-                ratioHeight: 39.5,
                 placeholderLeft: 0.572,
                 placeholderTop: 0.113,
                 placeholderWidth: 0.324,
@@ -233,6 +231,12 @@
                 const file = e.target.files[0];
                 if (!file) return;
 
+                // FIX: Dynamically calculate the exact true aspect ratio of the placeholder box in pixels.
+                // This ensures the Cropper tool creates an image perfectly proportioned to the box,
+                // completely preventing stretching/squeezing when drawn to the Canvas.
+                const rect = photoPlaceholder.getBoundingClientRect();
+                const exactTrueAspectRatio = rect.width / rect.height;
+
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     cropperImage.src = event.target.result;
@@ -242,7 +246,7 @@
                     if (cropper) cropper.destroy();
                     
                     cropper = new Cropper(cropperImage, {
-                        aspectRatio: config.ratioWidth / config.ratioHeight,
+                        aspectRatio: exactTrueAspectRatio, // Use the dynamically computed true pixel ratio
                         viewMode: 1,
                         dragMode: 'move',
                         autoCropArea: 1,
@@ -270,14 +274,14 @@
             applyCropBtn.addEventListener('click', () => {
                 if (!cropper) return;
                 
-                // Get cropped canvas
+                // Get cropped canvas - Increased base resolution to 800 for pristine HD quality scaling
                 const canvas = cropper.getCroppedCanvas({
-                    width: 600, // Good base resolution for the inserted image
+                    width: 800, 
                     imageSmoothingEnabled: true,
                     imageSmoothingQuality: 'high',
                 });
 
-                userPhoto.src = canvas.toDataURL('image/jpeg', 0.9);
+                userPhoto.src = canvas.toDataURL('image/jpeg', 0.95);
                 userPhoto.style.display = 'block';
                 placeholderHint.style.display = 'none';
                 
@@ -426,6 +430,7 @@
                     ctx.scale(imgState.zoom, imgState.zoom);
 
                     // Draw image centered at origin (0,0)
+                    // Since cropper aspectRatio perfectly aligns with placeW/placeH, no stretching occurs!
                     ctx.drawImage(userPhoto, -placeW / 2, -placeH / 2, placeW, placeH);
 
                     ctx.restore();
