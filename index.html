@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vote for PK Navas - UDF Poster Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', 'Noto Sans Malayalam', sans-serif;
+            background-color: #f0fdf4; /* Light green tint for UDF theme */
+            background-image: radial-gradient(#dcfce7 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .poster-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        #photo-placeholder {
+            position: absolute;
+            /* Exactly calculated positions based on the poster image pixels */
+            top: 11.3%;
+            left: 57.2%;
+            width: 32.4%;
+            height: 39.5%;
+            overflow: hidden;
+            border-radius: 8%; /* Matched the precise curve of the black box */
+            /* Removed box-shadow so edges are sharp, not blurred */
+            background-color: #ffffff;
+            z-index: 10;
+        }
+
+        #user-photo {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center;
+            cursor: grab;
+            display: none;
+            will-change: transform;
+        }
+
+        #user-photo:active {
+            cursor: grabbing;
+        }
+
+        /* Cropper Modal Styles */
+        #cropper-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.9);
+            flex-direction: column;
+        }
+
+        .cropper-container-wrapper {
+            flex: 1;
+            width: 100%;
+            max-height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        img {
+            -webkit-user-drag: none;
+        }
+        
+        /* Custom range slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col pb-10">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-teal-700 to-sky-700 text-white py-6 shadow-md text-center rounded-b-3xl mb-8 border-b-4 border-yellow-400">
+        <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-1 uppercase">Vote for PK Navas</h1>
+        <h2 class="text-lg md:text-xl font-semibold opacity-90 tracking-widest">VOTE FOR UDF</h2>
+    </header>
+
+    <main class="container mx-auto px-4 flex-grow flex flex-col items-center">
+        
+        <div class="w-full max-w-md mb-6 text-center">
+            <p class="text-slate-600 text-sm mb-4">Upload your photo, position it perfectly, and download your personalized campaign poster.</p>
+        </div>
+
+        <!-- Poster Display Area -->
+        <div class="poster-wrapper bg-white border border-slate-200 relative" id="poster-area">
+            <!-- Base Poster Image -->
+            <img id="base-poster" src="ballot%20v2.png" alt="PK Navas Poster Base" class="w-full h-auto block" onerror="this.src='https://placehold.co/1080x1350/eeeeee/999999?text=Please+place+ballot+v2.png+in+folder'">
+            
+            <!-- Placeholder for User Photo -->
+            <div id="photo-placeholder">
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs pointer-events-none" id="placeholder-hint">
+                    <i class="ph ph-user-circle text-4xl mb-1"></i>
+                    <span class="font-medium">Your Photo</span>
+                </div>
+                <img id="user-photo" src="" alt="User Photo">
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="w-full max-w-md mt-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            
+            <!-- Hidden File Input -->
+            <input type="file" id="image-upload" accept="image/png, image/jpeg, image/jpg" class="hidden">
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col gap-4">
+                <button onclick="document.getElementById('image-upload').click()" class="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="ph ph-upload-simple text-xl"></i>
+                    Upload Photo
+                </button>
+
+                <!-- Zoom Controls (Hidden until photo is uploaded) -->
+                <div id="edit-controls" class="hidden flex-col gap-3 py-3 border-y border-slate-100">
+                    <div class="flex justify-between items-center text-xs font-semibold text-slate-500 uppercase">
+                        <span><i class="ph ph-magnifying-glass-minus text-base"></i> Zoom Out</span>
+                        <span>Drag photo to adjust</span>
+                        <span>Zoom In <i class="ph ph-magnifying-glass-plus text-base"></i></span>
+                    </div>
+                    <input type="range" id="zoom-slider" min="1" max="3" step="0.01" value="1">
+                </div>
+
+                <button id="download-btn" class="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm opacity-50 cursor-not-allowed" disabled>
+                    <i class="ph ph-download-simple text-xl"></i>
+                    Download High Quality Poster
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Cropper Modal -->
+    <div id="cropper-modal" class="p-4 md:p-8">
+        <div class="text-white text-center mb-4">
+            <h3 class="text-xl font-bold">Crop Your Photo</h3>
+            <p class="text-sm opacity-70">Adjust the image to fit the poster frame</p>
+        </div>
+        
+        <div class="cropper-container-wrapper bg-black rounded-lg overflow-hidden">
+            <img id="cropper-image" src="" alt="To crop" class="max-w-full hidden">
+        </div>
+
+        <div class="flex gap-4 justify-center mt-6 pb-6">
+            <button id="cancel-crop" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors">
+                Cancel
+            </button>
+            <button id="apply-crop" class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                <i class="ph ph-crop"></i>
+                Crop & Apply
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configuration precisely matching the new CSS measurements
+            const config = {
+                ratioWidth: 32.4,
+                ratioHeight: 39.5,
+                placeholderLeft: 0.572,
+                placeholderTop: 0.113,
+                placeholderWidth: 0.324,
+                placeholderHeight: 0.395
+            };
+
+            const imageUpload = document.getElementById('image-upload');
+            const cropperModal = document.getElementById('cropper-modal');
+            const cropperImage = document.getElementById('cropper-image');
+            const cancelCropBtn = document.getElementById('cancel-crop');
+            const applyCropBtn = document.getElementById('apply-crop');
+            const userPhoto = document.getElementById('user-photo');
+            const placeholderHint = document.getElementById('placeholder-hint');
+            const editControls = document.getElementById('edit-controls');
+            const zoomSlider = document.getElementById('zoom-slider');
+            const downloadBtn = document.getElementById('download-btn');
+            const photoPlaceholder = document.getElementById('photo-placeholder');
+            const basePoster = document.getElementById('base-poster');
+
+            let cropper = null;
+            
+            // Image Transformation State
+            let imgState = {
+                zoom: 1,
+                panX: 0,
+                panY: 0
+            };
+
+            // Handle File Upload -> Open Cropper
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    cropperImage.src = event.target.result;
+                    cropperImage.classList.remove('hidden');
+                    cropperModal.style.display = 'flex';
+                    
+                    if (cropper) cropper.destroy();
+                    
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: config.ratioWidth / config.ratioHeight,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                };
+                reader.readAsDataURL(file);
+                // Reset input so the same file can be selected again if needed
+                e.target.value = '';
+            });
+
+            // Cancel Crop
+            cancelCropBtn.addEventListener('click', () => {
+                cropperModal.style.display = 'none';
+                if (cropper) cropper.destroy();
+            });
+
+            // Apply Crop
+            applyCropBtn.addEventListener('click', () => {
+                if (!cropper) return;
+                
+                // Get cropped canvas
+                const canvas = cropper.getCroppedCanvas({
+                    width: 600, // Good base resolution for the inserted image
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+
+                userPhoto.src = canvas.toDataURL('image/jpeg', 0.9);
+                userPhoto.style.display = 'block';
+                placeholderHint.style.display = 'none';
+                
+                // Reset Transform State
+                imgState = { zoom: 1, panX: 0, panY: 0 };
+                zoomSlider.value = 1;
+                updateImageTransform();
+
+                // Show controls & enable download
+                editControls.classList.remove('hidden');
+                editControls.classList.add('flex');
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                cropperModal.style.display = 'none';
+                cropper.destroy();
+            });
+
+            // Zoom functionality
+            zoomSlider.addEventListener('input', (e) => {
+                imgState.zoom = parseFloat(e.target.value);
+                constrainPan();
+                updateImageTransform();
+            });
+
+            // --- Drag & Pan Functionality ---
+            let isDragging = false;
+            let startX, startY;
+            let initialPanX, initialPanY;
+
+            function startDrag(e) {
+                if (imgState.zoom <= 1) return; // Only allow drag if zoomed in
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                startX = clientX;
+                startY = clientY;
+                initialPanX = imgState.panX;
+                initialPanY = imgState.panY;
+                
+                userPhoto.style.transition = 'none';
+                e.preventDefault(); // Prevent default image drag behavior
+            }
+
+            function doDrag(e) {
+                if (!isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                
+                imgState.panX = initialPanX + dx;
+                imgState.panY = initialPanY + dy;
+                
+                constrainPan();
+                updateImageTransform();
+            }
+
+            function stopDrag() {
+                if (!isDragging) return;
+                isDragging = false;
+                userPhoto.style.transition = 'transform 0.1s ease-out';
+            }
+
+            photoPlaceholder.addEventListener('mousedown', startDrag);
+            window.addEventListener('mousemove', doDrag);
+            window.addEventListener('mouseup', stopDrag);
+
+            photoPlaceholder.addEventListener('touchstart', startDrag, {passive: false});
+            window.addEventListener('touchmove', doDrag, {passive: false});
+            window.addEventListener('touchend', stopDrag);
+
+            function constrainPan() {
+                // The visual size of the image is element size * zoom
+                // We calculate max pan allowed based on actual pixel dimensions of the container
+                const rect = photoPlaceholder.getBoundingClientRect();
+                
+                const maxPanX = (rect.width * imgState.zoom - rect.width) / 2;
+                const maxPanY = (rect.height * imgState.zoom - rect.height) / 2;
+
+                // Restrict boundaries
+                if (imgState.panX > maxPanX) imgState.panX = maxPanX;
+                if (imgState.panX < -maxPanX) imgState.panX = -maxPanX;
+                if (imgState.panY > maxPanY) imgState.panY = maxPanY;
+                if (imgState.panY < -maxPanY) imgState.panY = -maxPanY;
+            }
+
+            function updateImageTransform() {
+                userPhoto.style.transform = `translate(${imgState.panX}px, ${imgState.panY}px) scale(${imgState.zoom})`;
+            }
+
+            // --- High Quality Download Engine ---
+            downloadBtn.addEventListener('click', () => {
+                if(!userPhoto.src) return;
+
+                // Update UI to loading state
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Generating HD Poster...';
+                downloadBtn.disabled = true;
+
+                // Allow UI to update before heavy canvas operation
+                setTimeout(() => {
+                    generateFinalImage();
+                }, 100);
+
+                function generateFinalImage() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Set canvas to natural high-res size of the base poster
+                    canvas.width = basePoster.naturalWidth;
+                    canvas.height = basePoster.naturalHeight;
+
+                    // 1. Draw base poster
+                    ctx.drawImage(basePoster, 0, 0, canvas.width, canvas.height);
+
+                    // 2. Calculate placeholder exact pixel values on the HD canvas
+                    const placeX = canvas.width * config.placeholderLeft;
+                    const placeY = canvas.height * config.placeholderTop;
+                    const placeW = canvas.width * config.placeholderWidth;
+                    const placeH = canvas.height * config.placeholderHeight;
+
+                    // 3. Setup clipping mask for the photo (Rounded Rectangle)
+                    ctx.save();
+                    ctx.beginPath();
+                    // Estimate border radius matching the new 8% CSS rule
+                    const cornerRadius = placeW * 0.08; 
+                    ctx.roundRect(placeX, placeY, placeW, placeH, cornerRadius);
+                    ctx.clip();
+
+                    // 4. Calculate scaling & panning translation from DOM space to HD Canvas space
+                    const domRect = photoPlaceholder.getBoundingClientRect();
+                    const scaleFactor = placeW / domRect.width; 
+
+                    const canvasPanX = imgState.panX * scaleFactor;
+                    const canvasPanY = imgState.panY * scaleFactor;
+
+                    // Center point of the placeholder
+                    const centerX = placeX + (placeW / 2);
+                    const centerY = placeY + (placeH / 2);
+
+                    // Move to center, apply translations and scale
+                    ctx.translate(centerX + canvasPanX, centerY + canvasPanY);
+                    ctx.scale(imgState.zoom, imgState.zoom);
+
+                    // Draw image centered at origin (0,0)
+                    ctx.drawImage(userPhoto, -placeW / 2, -placeH / 2, placeW, placeH);
+
+                    ctx.restore();
+
+                    // Trigger download
+                    try {
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        const link = document.createElement('a');
+                        link.download = 'PK_Navas_Campaign_Poster.jpg';
+                        link.href = dataUrl;
+                        link.click();
+                    } catch (err) {
+                        alert("Your browser is blocking the download due to security restrictions when opening files directly. Please use a local server like VS Code Live Server or upload the files to a web host.");
+                        console.error(err);
+                    } finally {
+                        // Reset button
+                        downloadBtn.innerHTML = originalText;
+                        downloadBtn.disabled = false;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
